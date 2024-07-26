@@ -1,113 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <style>
-        *{
-            padding: 0;
-            margin: 0;
-        }
-        #map{
-            width: 100%;
-            height: 100vh;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Controlled Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    *{
+      padding: 0;
+      margin: 0;
+  }
+  #map{
+      width: 100%;
+      height: 100vh;
+  }
+  </style>
 </head>
 <body>
-    <div id="map">
-        <div class="leaflet-control coordinate"></div>
-    </div>
+  <div id="map"></div>
+  <!-- <script src="index2.js"></script> -->
+  <script>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script>
-    // Map initialization
-        var map = L.map('map').setView([21.305, 80.09], 5);
+    /*---------------------------------------------------------------------------------------------------------------------------------------------*/
 
-    //   <!-- Tile-Layers -->
-
-    // osm layer
-        var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        });
-    //    osm.addTo(map);
-
-    //    watercolor.addTo(map);
-
-    // Dark
-        var darkmap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
-        });
-    //    darkmap.addTo(map);
-
-    // Using Google Maps static tiles with Leaflet.. 
-        googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{
-            maxZoom: 20,
-            subdomains:['mt0','mt1','mt2','mt3']
-        });
-        googleStreets.addTo(map);
-
-    // google street (Satellite view)
-        googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
-            maxZoom: 20,
-            subdomains:['mt0','mt1','mt2','mt3']
-        });
-        googleSat.addTo(map);   
+    document.addEventListener("DOMContentLoaded", function() {
+      //var map = L.map('map').setView([51.505, -0.09], 9);
+      var map = L.map('map').setView([20.5937, 78.9629], 6);
     
-
-    //    <!-- MARKER -->
-
-    //    L.marker([50.5,30.5]).addTo(map);   
-    /*    var singlemarker = L.marker([28.3949,84.1240]);
-        var popup = singlemarker.bindPopup('This is the Nepal').openPopup();
-        popup.addTo(map);
-    */
-
-    //  <!-- ADD ICON -->
-        var singlemarker = L.marker([20.5937,78.9629],{draggable:true});   
-        var popup = singlemarker.bindPopup('This is INDIA. '+ singlemarker.getLatLng()).openPopup();
-        popup.addTo(map);
-
-        console.log(singlemarker.toGeoJSON());
+      var baseLayers = {
+        "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map),
+        "Satellite": L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenTopoMap contributors'
+        }),
+        "darkmap":L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a> &copy; OpenTopoMap contributors',
+          subdomains: 'abcd',
+          maxZoom: 20
+      }),
+        "googleStreets":L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a> &copy; OpenTopoMap contributors',
+          maxZoom: 20,
+          subdomains:['mt0','mt1','mt2','mt3']
+      }),
+        "googleSat": L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a> &copy; OpenTopoMap contributors',
+          maxZoom: 20,
+          subdomains:['mt0','mt1','mt2','mt3']
+      })      
+      };
     
+      L.control.layers(baseLayers).addTo(map);
+    
+      function zoomIn() {
+        map.zoomIn();
+      }
+    
+      function zoomOut() {
+        map.zoomOut();
+      }
+    
+      function pointOut(location) {
+        const geocodingUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`;
+        axios.get(geocodingUrl).then(response => {
+          const data = response.data;
+          if (data && data.length > 0) {
+            const lat = data[0].lat;
+            const lon = data[0].lon;
+            map.setView([lat, lon], 10);
+            L.marker([lat, lon]).addTo(map)
+              .bindPopup(`<b>${location}</b>`)
+              .openPopup();
+          } else {
+            console.log("Location not found");
+          }
+        }).catch(error => {
+          console.log("Error fetching location data", error);
+        });
+      }
+    
+      function changeLayer(layerName) {
+        if (baseLayers[layerName]) {
+          map.eachLayer(function(layer) {
+            map.removeLayer(layer);
+          });
+          baseLayers[layerName].addTo(map);
+        } else {
+          console.log("Layer not found");
+        }
+      }
+    
+      window.zoomIn = zoomIn;
+      window.zoomOut = zoomOut;
+      window.pointOut = pointOut;
+      window.changeLayer = changeLayer;
+    
+      // Initialize Web Speech API
+      if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+    
+        recognition.onresult = function(event) {
+          const command = event.results[0][0].transcript.toLowerCase();
+          console.log(command);
+          if (command.includes('zoom in')) {
+            zoomIn();
+          } else if (command.includes('zoom out')) {
+            zoomOut();
+          } else if (command.includes('point out')) {
+            const location = command.replace('point out', '').trim();
+            pointOut(location);
+          } else if (command.includes('change layer to')) {
+            const layerName = command.replace('change layer to', '').trim();
+            changeLayer(layerName.charAt(0).toUpperCase() + layerName.slice(1));
+          }
+        };
+    
+        recognition.onend = function() {
+          recognition.start();
+        };
+    
+        recognition.start();
+      } else {
+        console.log("Web Speech API not supported in this browser.");
+      }
+    });
 
+    /*---------------------------------------------------------------------------------------------------------------------------------------------*/
 
-    // <!-- LAYER CONTROLS -->
+  </script>
 
-    var baseMaps = {
-        "OSM": osm,
-        "Dark": darkmap,
-        "Google Satellite": googleSat,
-        "Google Street": googleStreets
-    }
-    var overlayMaps = {
-        "First Marker": singlemarker,
-    }
-
-    L.control.layers(baseMaps,overlayMaps).addTo(map);
-
-    /*=================================================================
-                            LEAFLET EVENTS
-    ==================================================================*/
-    map.on('mouseover',function(){
-        console.log('Your mouse is over the map');  
-    })
-
-    map.on('mousemove',function(e){
-        document.getElementsByClassName('coordinate')[0].innerHTML = 'lat: '+e.latlng.lat+'lng: '+e.latlng.lng;
-        console.log('lat: '+e.latlng.lat,'lng:'+e.latlng.lng)
-    })
-
-    /*=================================================================
-                            STYLE CUSTOMIZATION             
-    ==================================================================*/
-
-    // Get it by inspecting the browser --
-
-    </script>
 </body>
 </html>
